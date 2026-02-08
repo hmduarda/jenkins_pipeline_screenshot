@@ -83,8 +83,10 @@ async function captureScreenshotAndSend() {
         }
 
         // 4. Construção da Mensagem
-        let message = `## 🛡️ Guardians Report\n`;
-        message += `> **Relatório de testes api e web, build: \`#${buildNumber}\`**\n`;
+        let 
+        message = `## 🛡️ Guardians Report\n`;
+        message += `> **Relatório de testes - API e WEB\n`;
+        message += `> **Build: \`#${buildNumber}\`**\n`;
         message += `> **Branch:** \`${branchBuild}\`\n`;
         message += `> **Resultado:** ${statusEmoji} **${buildResult}**\n\n`;
         
@@ -205,6 +207,7 @@ async function captureScreenshotAndSend() {
 }
 
 captureScreenshotAndSend();*/
+
 
 
 
