@@ -16,12 +16,16 @@ const pTotal = process.argv[12];
 
 async function captureScreenshotAndSend() {
     const browser = await puppeteer.launch({
-        executablePath: '/usr/bin/google-chrome', // Garante o uso do Chrome no ambiente Linux/Jenkins
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox', 
+            '--disable-dev-shm-usage',
+            '--headless=new' // Garante que rode em modo sem interface
+        ]
     });
+    
     const page = await browser.newPage();
-
-    // Define um tempo de espera maior (60 segundos) para conexões lentas
+    
     page.setDefaultNavigationTimeout(60000);
 
     try {
@@ -201,5 +205,6 @@ async function captureScreenshotAndSend() {
 }
 
 captureScreenshotAndSend();*/
+
 
 
