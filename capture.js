@@ -1,214 +1,106 @@
 const puppeteer = require('puppeteer');
-
 const { WebhookClient } = require('discord.js');
 
-
-
-// Argumentos vindos do Jenkins
-
+// Argumentos vindos do Jenkins (Ajustados após a remoção do nextRun)
 const jobName = process.argv[2];
-
 const buildNumber = process.argv[3];
-
 const buildResult = process.argv[4];
-
 const branchBuild = process.argv[5];
-
 const webHook = process.argv[6];
-
-const nextRun = process.argv[7];
-
-const allureUrl = process.argv[8];
-
+// O argumento 7 (nextRun) foi ignorado/removido
+const allureUrl = process.argv[8]; 
 const pPassed = process.argv[9];
-
 const pFailed = process.argv[10];
-
 const pBroken = process.argv[11];
-
 const pTotal = process.argv[12];
 
-
-
 async function captureScreenshotAndSend() {
-
     const browser = await puppeteer.launch({
-
         args: ['--no-sandbox', '--disable-setuid-sandbox']
-
     });
-
     const page = await browser.newPage();
 
-
-
     try {
-
         // 1. Login no Jenkins
-
         await page.goto('http://jenkins:8080/login'); 
-
         await page.type('#j_username', 'admin'); 
-
         await page.type('#j_password', 'admin'); 
-
         await page.click('button[type="submit"]'); 
-
         await page.waitForNavigation();
 
-
-
         // 2. Captura da Screenshot do Dashboard Allure
-
         await page.goto(`http://jenkins:8080/job/${jobName}/${buildNumber}/allure/`, { waitUntil: 'networkidle0' });
-
         await page.setViewport({ width: 1920, height: 1080 });
-
         await page.screenshot({ path: 'screenshot.png' });
 
-
-
-        // 3. Configuração de Estética (Cores e Emojis Customizados)
-
+        // 3. Configuração de Estética (Cores e Emojis)
         const webhook = new WebhookClient({ url: webHook });
-
         
-
         let color;
-
         let statusEmoji;
 
-
-
         switch (buildResult) {
-
             case 'SUCCESS':
-
-                color = 0x2ECC71; // Verde Esmeralda
-
-                statusEmoji = '✅'; // Sucesso
-
+                color = 0x2ECC71; // Verde
+                statusEmoji = '✅';
                 break;
-
             case 'FAILURE':
-
-                color = 0xFF4757; // Vermelho Coral
-
-                statusEmoji = '❌'; // Falha crítica
-
+                color = 0xFF4757; // Vermelho
+                statusEmoji = '❌';
                 break;
-
             case 'UNSTABLE':
-
-                color = 0xFFA502; // Laranja Vibrante
-
+                color = 0xFFA502; // Laranja
                 statusEmoji = '⚠️'; 
-
                 break;
-
             case 'ABORTED':
-
-                color = 0x707A8A; // Cinza Metálico
-
-                statusEmoji = '🔌'; // Tomada desligada
-
+                color = 0x707A8A; // Cinza
+                statusEmoji = '🔌';
                 break;
-
             default: 
-
                 color = 0xFF4757;
-
                 statusEmoji = '❓';
-
                 break;
-
         }
 
-
-
-        // 4. Construção da Mensagem Informativa
-
-        let message = `## 🛡️ Guardians Report | #${buildNumber}\n`;
-
-        message += `> **Ambiente:** \`Sistemas de Informação\`\n`;
-
+        // 4. Construção da Mensagem Informativa (Conforme seu pedido)
+        let message = `## 🛡️ Guardians Report\n`;
+        message += `> **Relatório de testes api e web, build: \`#${buildNumber}\`**\n`;
         message += `> **Branch:** \`${branchBuild}\`\n`;
-
         message += `> **Resultado:** ${statusEmoji} **${buildResult}**\n\n`;
-
         
-
         message += `### 📊 Sumário de Testes\n`;
-
         message += `🔹 **Sucesso:** \`${pPassed}\` | 🔸 **Falhas:** \`${pFailed}\`\n`;
-
         message += `⚡ **Instáveis:** \`${pBroken}\` | 🧪 **Total:** \`${pTotal}\`\n\n`;
 
-        
-
-        message += `⏭️ **Próximo Ciclo:** \`${nextRun}\``;
-
-
-
         // 5. Envio para o Discord
-
         await webhook.send({
-
             username: "Guardians Bot",
-
-            avatarURL: "https://i.imgur.com/l65Mo6m.png", // Seu avatar personalizado
-
+            avatarURL: "https://i.imgur.com/l65Mo6m.png",
             files: [{
-
                 attachment: './screenshot.png',
-
                 name: 'screenshot.png'
-
             }],
-
             embeds: [{
-
                 description: message,
-
                 color: color,
-
                 image: { url: "attachment://screenshot.png" },
-
                 url: allureUrl,
-
                 footer: {
-
-                    text: "DBC Bank Bank - Squad Guardians • Quality Assurance",
-
+                    text: "DBC Bank - Squad Guardians • Quality Assurance",
                     iconURL: "https://www.jenkins.io/images/logos/jenkins/jenkins.png"
-
                 },
-
                 timestamp: new Date()
-
             }]
-
         });
-
-
 
         console.log("Relatório Guardians enviado com sucesso!");
 
-
-
     } catch (err) {
-
         console.error("Erro crítico no capture.js:", err);
-
     } finally {
-
         await browser.close();
-
     }
-
 }
-
-
 
 captureScreenshotAndSend();
 
@@ -293,3 +185,4 @@ async function captureScreenshotAndSend() {
 }
 
 captureScreenshotAndSend();*/
+
