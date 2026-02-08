@@ -1,17 +1,21 @@
 {
   "name": "node_screenshot",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Ferramenta de captura de tela para pipeline Guardians",
+  "main": "capture.js",
   "scripts": {
+    "start": "node capture.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["jenkins", "allure", "qa", "puppeteer"],
+  "author": "Guardians Squad",
   "license": "ISC",
   "dependencies": {
     "discord.js": "^14.14.1",
     "imgur": "^2.4.2",
     "puppeteer": "^22.5.0"
+  },
+  "engines": {
+    "node": ">=16.9.0"
   }
 }
