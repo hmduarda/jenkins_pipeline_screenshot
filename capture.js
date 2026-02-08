@@ -1,13 +1,13 @@
 const puppeteer = require('puppeteer');
 const { WebhookClient } = require('discord.js');
 
-// Argumentos vindos do Jenkins (Ajustados após a remoção do nextRun)
+// Argumentos vindos do Jenkins
 const jobName = process.argv[2];
 const buildNumber = process.argv[3];
 const buildResult = process.argv[4];
 const branchBuild = process.argv[5];
 const webHook = process.argv[6];
-// O argumento 7 (nextRun) foi ignorado/removido
+// O argumento 7 é o "SKIP" que enviamos no Jenkinsfile
 const allureUrl = process.argv[8]; 
 const pPassed = process.argv[9];
 const pFailed = process.argv[10];
@@ -16,44 +16,60 @@ const pTotal = process.argv[12];
 
 async function captureScreenshotAndSend() {
     const browser = await puppeteer.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        executablePath: '/usr/bin/google-chrome', // Garante o uso do Chrome no ambiente Linux/Jenkins
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     });
     const page = await browser.newPage();
 
+    // Define um tempo de espera maior (60 segundos) para conexões lentas
+    page.setDefaultNavigationTimeout(60000);
+
     try {
-        // 1. Login no Jenkins
-        await page.goto('http://jenkins:8080/login'); 
+        console.log("Iniciando login no Jenkins...");
+        
+        // 1. Login no Jenkins (Usando localhost conforme seu log)
+        await page.goto('http://localhost:8080/login', { waitUntil: 'networkidle2' }); 
         await page.type('#j_username', 'admin'); 
         await page.type('#j_password', 'admin'); 
-        await page.click('button[type="submit"]'); 
-        await page.waitForNavigation();
+        
+        // Clica e espera a navegação completar
+        await Promise.all([
+            page.click('button[type="submit"]'),
+            page.waitForNavigation({ waitUntil: 'networkidle2' }),
+        ]);
+
+        console.log("Login realizado. Capturando Allure...");
 
         // 2. Captura da Screenshot do Dashboard Allure
-        await page.goto(`http://jenkins:8080/job/${jobName}/${buildNumber}/allure/`, { waitUntil: 'networkidle0' });
+        const allureReportUrl = `http://localhost:8080/job/${jobName}/${buildNumber}/allure/`;
+        await page.goto(allureReportUrl, { waitUntil: 'networkidle0' });
+        
+        // Espera um pouco para os gráficos carregarem (animação do Allure)
+        await new Promise(r => setTimeout(r, 5000)); 
+
         await page.setViewport({ width: 1920, height: 1080 });
         await page.screenshot({ path: 'screenshot.png' });
 
-        // 3. Configuração de Estética (Cores e Emojis)
+        // 3. Configuração de Estética
         const webhook = new WebhookClient({ url: webHook });
-        
         let color;
         let statusEmoji;
 
         switch (buildResult) {
             case 'SUCCESS':
-                color = 0x2ECC71; // Verde
+                color = 0x2ECC71;
                 statusEmoji = '✅';
                 break;
             case 'FAILURE':
-                color = 0xFF4757; // Vermelho
+                color = 0xFF4757;
                 statusEmoji = '❌';
                 break;
             case 'UNSTABLE':
-                color = 0xFFA502; // Laranja
+                color = 0xFFA502;
                 statusEmoji = '⚠️'; 
                 break;
             case 'ABORTED':
-                color = 0x707A8A; // Cinza
+                color = 0x707A8A;
                 statusEmoji = '🔌';
                 break;
             default: 
@@ -62,7 +78,7 @@ async function captureScreenshotAndSend() {
                 break;
         }
 
-        // 4. Construção da Mensagem Informativa (Conforme seu pedido)
+        // 4. Construção da Mensagem
         let message = `## 🛡️ Guardians Report\n`;
         message += `> **Relatório de testes api e web, build: \`#${buildNumber}\`**\n`;
         message += `> **Branch:** \`${branchBuild}\`\n`;
@@ -185,4 +201,5 @@ async function captureScreenshotAndSend() {
 }
 
 captureScreenshotAndSend();*/
+
 
