@@ -28,17 +28,20 @@ async function captureScreenshotAndSend() {
     page.setDefaultNavigationTimeout(60000);
 
     try {
-        console.log(`Capturando dashboard público: ${allureUrl}`);
+        console.log(`[Guardians] Capturando dashboard Allure: ${allureUrl}`);
 
-        // Acessa direto o GitHub Pages
-        await page.goto(allureUrl, { waitUntil: 'networkidle0' });
-        
-        // Espera os gráficos carregarem
-        await new Promise(r => setTimeout(r, 6000)); 
-
+        // Define viewport antes de navegar
         await page.setViewport({ width: 1920, height: 1080 });
-        await page.screenshot({ path: 'screenshot.png' });
 
+        // Acessa o relatório público
+        await page.goto(allureUrl, { waitUntil: 'networkidle0' });
+
+        // Aguarda gráficos e assets JS
+        await new Promise(r => setTimeout(r, 6000));
+
+        // Screenshot
+        await page.screenshot({ path: screenshotName });
+        
         const webhook = new WebhookClient({ url: webHook });
         let color, statusEmoji;
 
@@ -80,10 +83,10 @@ async function captureScreenshotAndSend() {
             }]
         });
 
-        console.log("Relatório Guardians enviado com sucesso!");
+        console.log("[Guardians] Relatório enviado com sucesso ao Discord");
 
     } catch (err) {
-        console.error("Erro crítico no capture.js:", err);
+        console.error("[Guardians] Erro crítico no capture.js:", err);
     } finally {
         await browser.close();
     }
