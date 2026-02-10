@@ -2,17 +2,13 @@ const puppeteer = require('puppeteer');
 const { WebhookClient } = require('discord.js');
 
 // Argumentos vindos do Jenkins
-const jobName = process.argv[2];
-const buildNumber = process.argv[3];
-const buildResult = process.argv[4];
-const branchBuild = process.argv[5];
-const webHook = process.argv[6];
-// O argumento 7 é o "SKIP"
-const allureUrl = process.argv[8]; // Este agora é o seu link do ngrok vindo do Jenkinsfile
-const pPassed = process.argv[9];
-const pFailed = process.argv[10];
-const pBroken = process.argv[11];
-const pTotal = process.argv[12];
+const jobName       = process.argv[2];
+const buildNumber   = process.argv[3];
+const buildResult   = process.argv[4];
+const branchBuild   = process.argv[5];
+const webHook       = process.argv[6];
+const buildDuration = process.argv[7];
+const buildUrl      = process.argv[8];
 
 async function captureScreenshotAndSend() {
     const browser = await puppeteer.launch({
@@ -25,35 +21,27 @@ async function captureScreenshotAndSend() {
     });
     
     const page = await browser.newPage();
-    page.setDefaultNavigationTimeout(60000);
+    await page.goto('http://localhost:8080/login'); // Página de login do Jenkins
+    
+    // Preencher formulário de login
+    await page.type('#j_username', 'admin'); // Substitua 'seu-usuario' pelo nome de usuário do Jenkins
+    await page.type('#j_password', 'admin'); // Substitua 'sua-senha' pela senha do Jenkins
+    await Promise.all([
+        page.click('form[name="login"] > button[type="submit"]'),
+        page.waitForNavigation({ waitUntil: 'networkidle2' })
+    ]); // Enviar formulário de login
 
-    try {
-        console.log(`Acessando Jenkins via ngrok: ${allureUrl}`);
-        
-        // 1. Login no Jenkins usando a URL do ngrok
-        await page.goto(`${allureUrl.split('/job/')[0]}/login`, { waitUntil: 'networkidle2' }); 
-        await page.type('#j_username', 'admin'); 
-        await page.type('#j_password', 'admin'); 
-        
-        await Promise.all([
-            page.click('button[type="submit"]'),
-            page.waitForNavigation({ waitUntil: 'networkidle2' }),
-        ]);
+    await page.goto(`http://localhost:8080/job/${jobName}/${buildNumber}/allure/`);
+    // Ir para a página do relatório Allure após o login
+    await page.setViewport({
+        width: 1920, // Largura da tela
+        height: 1080, // Altura da tela
+    });
 
-        console.log("Login realizado. Capturando screenshot do Allure...");
-
-        // 2. Vai direto para a URL do relatório Allure (ngrok)
-        await page.goto(allureUrl, { waitUntil: 'networkidle0' });
-        
-        // Espera os gráficos carregarem
-        await new Promise(r => setTimeout(r, 7000)); 
-
-        await page.setViewport({ width: 1920, height: 1080 });
         await page.screenshot({ path: 'screenshot.png' });
 
-        const webhook = new WebhookClient({ url: webHook });
-        
-        // ... (lógica de switch/case de cores permanece a mesma)
+        const webhook = new WebhookClient({ url: '' + webHook });
+
         let color;
         let statusEmoji;
         switch (buildResult) {
@@ -84,12 +72,6 @@ async function captureScreenshotAndSend() {
                 description: message,
                 color: color,
                 image: { url: "attachment://screenshot.png" },
-                url: allureUrl, // O título do embed agora levará para o seu ngrok
-                footer: {
-                    text: "DBC Bank - Squad Guardians • Quality Assurance",
-                    iconURL: "https://www.jenkins.io/images/logos/jenkins/jenkins.png"
-                },
-                timestamp: new Date()
             }]
         });
 
@@ -103,3 +85,4 @@ async function captureScreenshotAndSend() {
 }
 
 captureScreenshotAndSend();
+
